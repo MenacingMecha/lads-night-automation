@@ -37,6 +37,8 @@ class ClipGroups:
                 clips.remove(clip)
         if randomise_order:
             random.shuffle(clips)
+        else:
+            clips.sort()
         self._clip_groups[group_name] = clips
 
     def get_clip_from_group(self, group_name: str) -> str:
