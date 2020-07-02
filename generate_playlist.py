@@ -67,23 +67,46 @@ def get_blocklist_from_file(path: str) -> List[str]:
         blocklist = []
     return blocklist
 
+def config_has_key(config: dict, key: str, key_location: str) -> bool:
+    try:
+        config[key]
+    except KeyError:
+        logging.exception("Key: '" + key + "' not found in '" + key_location + "'")
+    else:
+        return True
+
 if __name__ == "__main__":
     temp_blocklist_path = "temp_blocklist.txt"
     perm_blocklist_path = "perm_blocklist.txt"
     clip_groups = ClipGroups(get_blocklist_from_file(temp_blocklist_path), get_blocklist_from_file(perm_blocklist_path))
-    # print(clip_groups._temp_blocklist + clip_groups._perm_blocklist)
 
     config_path = "lads-night.yaml"
     with open(config_path) as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
-        for key, value in config["clip groups"].items():
-            clip_groups.add_clips_from_dir(key, value["path"], value["shuffle"])
 
-        playlist_path = "playlist.txt"
-        with open(playlist_path, "w") as playlist_file:
-            playlist = Playlist(playlist_file)
-            for group in config["schedule"]:
-                playlist.add_clip(clip_groups.get_clip_from_group(group), config["clip groups"][group]["blocklist type"])
+    if config_has_key(config, "clip groups", "base yaml"):
+        config_clip_groups = config["clip groups"]
+        try:
+            config_clip_groups.keys()
+        except AttributeError:
+            logging.exception("'clip groups' contains no entries")
+        else:
+            for key, value in config_clip_groups.items():
+                if config_has_key(value, "path", key) and config_has_key(value, "shuffle", key):
+                    clip_groups.add_clips_from_dir(key, value["path"], value["shuffle"])
+
+    playlist_path = "playlist.txt"
+    with open(playlist_path, "w") as playlist_file:
+        playlist = Playlist(playlist_file)
+        if config_has_key(config, "schedule", "base yaml"):
+            try:
+                len(config["schedule"]) < 1
+            except TypeError:
+                logging.exception("Schedule contains no entries")
+            else:
+                for group in config["schedule"]:
+                    if config_has_key(config["clip groups"][group], "blocklist type", group):
+                        playlist.add_clip(clip_groups.get_clip_from_group(group), config["clip groups"][group]["blocklist type"])
 
     with open(temp_blocklist_path, "w") as temp_blocklist_file:
         temp_blocklist_file.writelines(x + "\n" for x in playlist.get_temp_blocklist_additions())
