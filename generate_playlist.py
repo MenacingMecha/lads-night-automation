@@ -5,7 +5,8 @@ import glob
 import random
 import yaml
 import logging
-from typing import List, TextIO
+import argparse
+from typing import List, TextIO 
 
 class Playlist:
     def __init__(self, playlist_file: TextIO):
@@ -80,9 +81,13 @@ def write_to_blocklist(blocklist_path: str, blocklist_additions: List[str], file
         with open(blocklist_path, file_mode) as blocklist_file:
             blocklist_file.writelines(x + "\n" for x in blocklist_additions)
 
+def get_args() -> argparse:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', dest="config_path", type=str, default='config.yaml', help="Specify an alternate config path. Defaults to 'config.yaml'.")
+    return parser.parse_args()
+
 if __name__ == "__main__":
-    config_path = "lads-night.yaml"
-    with open(config_path) as file:
+    with open(get_args().config_path) as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
     
     if config_has_key(config, "blocklist paths", "base yaml"):
