@@ -60,11 +60,11 @@ class ClipGroups:
         return self._temp_blocklist + self._perm_blocklist
 
 def get_blocklist_from_file(path: str) -> List[str]:
-    if (os.path.isfile(path)):
-        with open(path, "r") as file:
-            blocklist = file.read().splitlines()
-    else:
-        blocklist = []
+    blocklist = []
+    if path is not None:
+        if (os.path.isfile(path)):
+            with open(path, "r") as file:
+                blocklist = file.read().splitlines()
     return blocklist
 
 def config_has_key(config: dict, key: str, key_location: str) -> bool:
@@ -75,14 +75,28 @@ def config_has_key(config: dict, key: str, key_location: str) -> bool:
     else:
         return True
 
-if __name__ == "__main__":
-    temp_blocklist_path = "temp_blocklist.txt"
-    perm_blocklist_path = "perm_blocklist.txt"
-    clip_groups = ClipGroups(get_blocklist_from_file(temp_blocklist_path), get_blocklist_from_file(perm_blocklist_path))
+def write_to_blocklist(blocklist_path: str, blocklist_additions: List[str], file_mode: str):
+    if blocklist_path is not None:
+        with open(blocklist_path, file_mode) as blocklist_file:
+            blocklist_file.writelines(x + "\n" for x in blocklist_additions)
 
+if __name__ == "__main__":
     config_path = "lads-night.yaml"
     with open(config_path) as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
+    
+    if config_has_key(config, "blocklist paths", "base yaml"):
+        config_blocklist_paths = config["blocklist paths"]
+        if config_has_key(config_blocklist_paths, "temporary", "blocklist paths"):
+            temp_blocklist_path = config_blocklist_paths["temporary"]
+        else:
+            temp_blocklist_path = None
+        if config_has_key(config_blocklist_paths, "permanent", "blocklist paths"):
+            perm_blocklist_path = config_blocklist_paths["permanent"]
+        else:
+            perm_blocklist_path = None
+
+    clip_groups = ClipGroups(get_blocklist_from_file(temp_blocklist_path), get_blocklist_from_file(perm_blocklist_path))
 
     if config_has_key(config, "clip groups", "base yaml"):
         config_clip_groups = config["clip groups"]
@@ -108,8 +122,5 @@ if __name__ == "__main__":
                     if config_has_key(config["clip groups"][group], "blocklist type", group):
                         playlist.add_clip(clip_groups.get_clip_from_group(group), config["clip groups"][group]["blocklist type"])
 
-    with open(temp_blocklist_path, "w") as temp_blocklist_file:
-        temp_blocklist_file.writelines(x + "\n" for x in playlist.get_temp_blocklist_additions())
-
-    with open(perm_blocklist_path, "a") as perm_blocklist_file:
-        perm_blocklist_file.writelines(x + "\n" for x in playlist.get_perm_blocklist_additions())
+    write_to_blocklist(temp_blocklist_path, playlist.get_temp_blocklist_additions(), "w")
+    write_to_blocklist(perm_blocklist_path, playlist.get_perm_blocklist_additions(), "a")
