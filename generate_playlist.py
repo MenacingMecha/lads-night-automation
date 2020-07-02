@@ -90,8 +90,8 @@ if __name__ == "__main__":
     with open(get_args().config_path) as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
     
-    if config_has_key(config, "blocklist paths", "base yaml"):
-        config_blocklist_paths = config["blocklist paths"]
+    if config_has_key(config, "blocklist_paths", "base yaml"):
+        config_blocklist_paths = config["blocklist_paths"]
         if config_has_key(config_blocklist_paths, "temporary", "blocklist paths"):
             temp_blocklist_path = config_blocklist_paths["temporary"]
         else:
@@ -103,8 +103,8 @@ if __name__ == "__main__":
 
     clip_groups = ClipGroups(get_blocklist_from_file(temp_blocklist_path), get_blocklist_from_file(perm_blocklist_path))
 
-    if config_has_key(config, "clip groups", "base yaml"):
-        config_clip_groups = config["clip groups"]
+    if config_has_key(config, "clip_groups", "base yaml"):
+        config_clip_groups = config["clip_groups"]
         try:
             config_clip_groups.keys()
         except AttributeError:
@@ -124,8 +124,8 @@ if __name__ == "__main__":
                 logging.exception("Schedule contains no entries")
             else:
                 for group in config["schedule"]:
-                    if config_has_key(config["clip groups"][group], "blocklist type", group):
-                        playlist.add_clip(clip_groups.get_clip_from_group(group), config["clip groups"][group]["blocklist type"])
+                    if config_has_key(config["clip_groups"][group], "blocklist_type", group):
+                        playlist.add_clip(clip_groups.get_clip_from_group(group), config["clip_groups"][group]["blocklist_type"])
 
     write_to_blocklist(temp_blocklist_path, playlist.get_temp_blocklist_additions(), "w")
     write_to_blocklist(perm_blocklist_path, playlist.get_perm_blocklist_additions(), "a")
